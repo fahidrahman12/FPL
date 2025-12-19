@@ -10,8 +10,10 @@
 #-------------------------------------------------------------------#
 # [1A] Setting up: Importing packages and files                     #
 # [1B] Setting up: Retaining relevant data only                     #
-# [2] Creating a player-level DF                                    #
+# [2] Creating a player-ID                                          #
 # [3] Creating new variables                                        #
+# [4] Creating a player-level DF                                    #
+# [5] Deriving PPM                                                  #
 #-------------------------------------------------------------------#
 
 #-----------------------------------------------#
@@ -24,7 +26,7 @@ import pandas as pd
 
 # Importing all merged data from seasons XX-XX to 24-25.
 
-original_DF = pd.read_csv("cleaned_merged_seasons_team_aggregated.csv")
+original_DF = pd.read_csv("G:/My Drive/personal projects/fpl/FPL/cleaned_merged_seasons_team_aggregated.csv")
 
 original_DF.info()
 
@@ -39,7 +41,7 @@ df = original_DF[(original_DF['season_x'] != "2023-24")]
 df = df[["season_x", "team_x", "name", "position", "total_points", "value", "GW"]]
 
 #--------------------------#
-# [3] Creating a player-ID #
+# [2] Creating a player-ID #
 #--------------------------#
 
 df = df.copy()
@@ -48,7 +50,7 @@ df["player_ID"] = (df.groupby(["name", "position"]).ngroup())
 df.sort_values(by = "player_ID", ascending = True)
 
 #----------------------------#
-# [4] Creating new variables #
+# [3] Creating new variables #
 #----------------------------#
 
 # 'total_points': Creating a 'total_points' column, for the total # ...
@@ -63,10 +65,14 @@ print(df[df["name"] == "Cole Palmer"])
 df["value"] = df["value"] / 10
 
 #--------------------------------#
-# [2] Creating a player-level DF #
+# [4] Creating a player-level DF #
 #--------------------------------#
 
-df = df[["season_x", "team_x", "name", "position", "value"]]
+df = df[(df['GW'] == 38)]
+
+#------------------#
+# [5] Deriving PPM #
+#------------------#
 
 # PPM
 
@@ -79,4 +85,7 @@ df = df[["season_x", "team_x", "name", "position", "value"]]
 df = df.copy()
 df["PPM"] = df["season_total_points"] / df["value"]
 
+df = df[["player_ID", "season_x", "team_x", "name", "position", "season_total_points", "PPM"]]
+
 print(df[df["name"] == "Cole Palmer"])
+print(df[df["name"] == "Mohamed Salah"])
