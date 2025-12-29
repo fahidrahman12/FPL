@@ -20,13 +20,22 @@
 # [1A] Setting up: Importing packages and files #
 #-----------------------------------------------#
 
-# Importing appropriate Python packages.
-
 import pandas as pd
+import numpy as np
+from pathlib import Path
+
+from pandas.core.interchange.dataframe_protocol import DataFrame
+
+try:
+    ROOT_DIR = Path(__file__).resolve().parents[1]
+except NameError:
+    # Running in Python Console / Execute Selection
+    ROOT_DIR = Path.cwd()
+DATA_PATH = ROOT_DIR / "cleaned_merged_seasons_team_aggregated.csv"
 
 # Importing all merged data from seasons XX-XX to 24-25.
 
-original_DF = pd.read_csv("G:/My Drive/personal projects/fpl/FPL/cleaned_merged_seasons_team_aggregated.csv")
+original_DF = pd.read_csv(DATA_PATH)
 
 original_DF.info()
 
@@ -88,4 +97,36 @@ df["PPM"] = df["season_total_points"] / df["value"]
 df = df[["player_ID", "season_x", "team_x", "name", "position", "season_total_points", "PPM"]]
 
 print(df[df["name"] == "Cole Palmer"])
+print(df[df["name"] == "Mohamed Salah"])
+
+
+#### points_per_season slope coefficeint
+## first create new col for season idx so its a number
+df['season_idx']= (df.groupby('player_ID').cumcount())
+
+# create function that calculates the coefficient
+##
+def linear_season_coefficient(g: pd.DataFrame) -> float:
+    if len(g) < 2:
+        return np.nan
+
+    x = g["season_idx"].to_numpy(dtype=float)
+    y = g["season_total_points"].to_numpy(dtype=float)
+
+    if np.unique(x).size < 2:
+        return np.nan
+
+    slope, intercept = np.polyfit(x, y, 1)
+    return slope
+# make df with all coefficients for each player
+slopes = (
+    df.groupby("player_ID")
+      .apply(linear_season_coefficient)
+      .rename("season_slope_coefficient")
+      .reset_index()
+)
+
+df = df.merge(slopes, on="player_ID", how="left")
+df.info()
+
 print(df[df["name"] == "Mohamed Salah"])
